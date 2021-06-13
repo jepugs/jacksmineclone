@@ -1,13 +1,8 @@
-local minetest_add_item = minetest.add_item
---local minetest_sound_play = minetest.sound_play
-
-local math_pi     = math.pi
-local math_random = math.random
-local math_floor  = math.floor
-local HALF_PI     = math_pi / 2
-
-local vector_new = vector.new
-
+local random = math.random
+local floor = math.floor
+local mt_add_item = minetest.add_item
+local mt_get_craft_result = minetest.get_craft_result
+local HALF_PI     = math.pi / 2
 
 -- drop items
 local item_drop = function(self, cooked, looting_level)
@@ -40,14 +35,14 @@ local item_drop = function(self, cooked, looting_level)
 
 		local num = 0
 		local do_common_looting = (looting_level > 0 and looting_type == "common")
-		if math_random() < chance then
-			num = math_random(dropdef.min or 1, dropdef.max or 1)
+		if random() < chance then
+			num = random(dropdef.min or 1, dropdef.max or 1)
 		elseif not dropdef.looting_ignore_chance then
 			do_common_looting = false
 		end
 
 		if do_common_looting then
-			num = num + math_floor(math_random(0, looting_level) + 0.5)
+			num = num + floor(random(0, looting_level) + 0.5)
 		end
 
 		if num > 0 then
@@ -56,7 +51,7 @@ local item_drop = function(self, cooked, looting_level)
 			-- cook items when true
 			if cooked then
 
-				local output = minetest.get_craft_result({
+				local output = mt_get_craft_result({
 					method = "cooking",
                     width = 1,
                     items = {item},
@@ -69,15 +64,15 @@ local item_drop = function(self, cooked, looting_level)
 
 			-- add item if it exists
 			for x = 1, num do
-				obj = minetest_add_item(pos, ItemStack(item .. " " .. 1))
+				obj = mt_add_item(pos, ItemStack(item .. " " .. 1))
 			end
 
 			if obj and obj:get_luaentity() then
 
 				obj:set_velocity({
-					x = math_random(-10, 10) / 9,
+					x = random(-10, 10) / 9,
 					y = 6,
-					z = math_random(-10, 10) / 9,
+					z = random(-10, 10) / 9,
 				})
 			elseif obj then
 				obj:remove() -- item does not exist
@@ -90,6 +85,9 @@ end
 
 
 mobs.death_logic = function(self, dtime)
+	-- FIXME: self should never be nil, and this check shouldn't be here. The
+	-- correct approach is to not call this function with invalid input. I can't
+	-- find anywhere where this happens though.
 
 	--stop crashing game when object is nil
 	if not self or not self.object or not self.object:get_luaentity() then
@@ -127,7 +125,8 @@ mobs.death_logic = function(self, dtime)
 
         item_drop(self,false,1)
         mobs.death_effect(self)
-		mcl_experience.throw_experience(self.object:get_pos(), math_random(self.xp_min, self.xp_max))
+		mcl_experience.throw_experience(self.object:get_pos(), random(self.xp_min, self.xp_max))
+		--FIXME: this should probably be handled elsewhere
         self.object:remove()
 
 		return
@@ -153,7 +152,7 @@ mobs.death_logic = function(self, dtime)
     --flying and swimming mobs just fall down
     if self.fly or self.swim then
         if self.object:get_acceleration().y ~= -self.gravity then
-            self.object:set_acceleration(vector_new(0,-self.gravity,0))
+            self.object:set_acceleration(vector.new(0,-self.gravity,0))
         end
     end
 
@@ -161,5 +160,23 @@ mobs.death_logic = function(self, dtime)
     if self.pause_timer <= 0 then
         mobs.set_velocity(self,0)
     end
+
+	-- Jack's note: the following block of code was right after the call to
+	-- death_logic in the ai loop, so I thought it made more sense in here. I
+	-- cannot really tell what purpose it serves at a glance.
+
+	-- FIXME: investigate this
+
+	--this is here because the mob must continue to move
+	--while stunned before coming to a complete halt even during
+	--the death tilt
+	if self.pause_timer > 0 then
+		self.pause_timer = self.pause_timer - dtime
+		--perfectly reset pause_timer
+		if self.pause_timer < 0 then
+			self.pause_timer = 0
+		end
+	end
+
 
 end

@@ -801,18 +801,14 @@ function mobs.mob_step(self, dtime)
 	end
 
 
-	--DEBUG TIME!
-	--REMEMBER TO MOVE THIS AFTER DEATH CHECK
+	--do death logic (animation, poof, explosion, etc)
+	if self.dead then
+		mobs.death_logic(self, dtime)
+		return
+	end
 
-	--if self.has_head then
-	--	mobs.do_head_logic(self,dtime)
-	--end
-
-
-
-	--if true then--DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-	--	return
-	--end
+	-- FIXME: this despawn stuff is completely wrong and broken. It'll take some
+	-- plumbing to fix.
 
 	--despawn mechanism
 	--don't despawned tamed or bred mobs
@@ -838,29 +834,12 @@ function mobs.mob_step(self, dtime)
 	end
 	self.old_health = self.health
 
-	--do death logic (animation, poof, explosion, etc)
-	if self.health <= 0 or self.dead then
-		--play death sound once
-		if not self.played_death_sound then
-			self.dead = true
-			mobs.play_sound(self,"death")
-			self.played_death_sound = true
-		end
-
-		mobs.death_logic(self, dtime)
-
-		--this is here because the mob must continue to move
-		--while stunned before coming to a complete halt even during
-		--the death tilt
-		if self.pause_timer > 0 then
-			self.pause_timer = self.pause_timer - dtime
-			--perfectly reset pause_timer
-			if self.pause_timer < 0 then
-				self.pause_timer = 0
-			end
-		end
-
-		return
+	-- kill logic
+	if self.health <= 0 then
+		self.dead = true
+		mobs.play_sound(self,"death")
+		-- FIXME: I think this next line is entirely unnecessary
+		self.played_death_sound = true
 	end
 
 	mobs.random_sound_handling(self,dtime)
