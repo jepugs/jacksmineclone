@@ -1,6 +1,36 @@
-# (Currently in feature freeze)
+# Jack's Mineclone
 
-# MineClone 2
+This is my fork of MineClone 2 to play with my friends. It mostly tracks the
+MineClone2 upstream, with a couple of bug fixes tossed in. There are also a
+couple of changes I'd to make, if I have the spare time:
+- fix incompatibilities with Minecraft
+- rework the mob code since there's lots of spaghetti at the moment
+- try to add woodland fortresses
+- support for floating islands (in overworld)
+  - make the current floating islands more resource-rich
+  - cap the world at height 8192
+  - large islands spawn in height ranges 1024-4096
+  - adjust structures to spawn on floating islands
+- nether extensions
+  - add vertical coordinate scaling so that the nether may be used to fast
+    travel to floating islands. (This will be accomplished by extending the top
+    of the Nether. My idea is this. In the region above the current bedrock
+    level, vertical coordinates will be scaled x8. This will allow people to
+    quickly reach the 1024+ block heights at which floating islands reside.
+  - fix up zombie pigmen/increase spawn rates
+  - add nether fortresses
+  - if I'm feeling ambitious, I might try to add nether biomes
+- redstone/mechanisms
+  - hard code support for the BUDed tnt dupe
+  - improve placement UI for hoppers, chests, etc
+- Might add features from later versions of Minecraft, including
+  - bees and honey blocks
+  - composters
+
+What follows is the README.md from MineClone 2 at the time of this file's
+creation.
+
+## MineClone 2
 An unofficial Minecraft-like game for Minetest. Forked from MineClone by davedevils.
 Developed by many people. Not developed or endorsed by Mojang AB.
 
@@ -195,4 +225,4 @@ Technical differences from Minecraft:
 * `CONTRIBUTING.md`: Information for those who want to contribute
 * `API.md`: For Minetest modders who want to mod this game
 * `LEGAL.md`: Legal information
-* `CREDITS.md`: List of everyone who contributed
+    * `CREDITS.md`: List of everyone who contribute
