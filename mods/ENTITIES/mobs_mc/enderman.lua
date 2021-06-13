@@ -569,9 +569,8 @@ mobs:register_mob("mobs_mc:enderman", {
 			--if (minetest.get_timeofday() * 24000) > 5001 and (minetest.get_timeofday() * 24000) < 19000 then
 			--	self:teleport(nil)
 			--else
-			if pr:next(1, 8) == 8 then --FIXME: real mc rate
-				self:teleport(hitter)
-			end
+
+			self:teleport(hitter)
 			self.attack=hitter
 			self.state="attack"
 			--end
