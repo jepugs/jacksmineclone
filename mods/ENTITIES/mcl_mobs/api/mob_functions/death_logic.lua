@@ -120,11 +120,17 @@ mobs.death_logic = function(self, dtime)
 
     --the final POOF of a mob despawning
     if self.death_animation_timer >= 1.25 then
+		--call death hook
+		if self.on_die ~= nil then
+			self.on_die(self, self.object:get_pos())
+		end
+
         item_drop(self,false,1)
         mobs.death_effect(self)
 		mcl_experience.throw_experience(self.object:get_pos(), math_random(self.xp_min, self.xp_max))
         self.object:remove()
-        return
+
+		return
     end
 
     --I'm sure there's a more efficient way to do this
@@ -155,4 +161,5 @@ mobs.death_logic = function(self, dtime)
     if self.pause_timer <= 0 then
         mobs.set_velocity(self,0)
     end
+
 end
