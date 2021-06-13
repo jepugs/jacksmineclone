@@ -401,6 +401,10 @@ function mobs:register_mob(name, def)
 		defuse_reach = def.defuse_reach or 4,
 		-- End of MCL2 extensions
 
+		-- Jack's extensions
+		persistent = def.persistent or false,
+		-- End of Jack's extensions
+
 		on_spawn = def.on_spawn,
 
 		--on_blast = def.on_blast or do_tnt,
@@ -418,7 +422,7 @@ function mobs:register_mob(name, def)
 		--on_detach_child = mob_detach_child,
 
 		on_activate = function(self, staticdata, dtime)
-			self.object:set_acceleration(vector.new(0,-GRAVITY, 0))
+			--self.object:set_acceleration(vector.new(0,-GRAVITY, 0))
 			return mobs.mob_activate(self, staticdata, def, dtime)
 		end,
 

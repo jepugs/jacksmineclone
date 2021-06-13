@@ -824,23 +824,6 @@ function mobs.mob_step(self, dtime)
 		end
 	end
 
-	--color modifier which coincides with the pause_timer
-	if self.old_health and self.health < self.old_health then
-		self.object:set_texture_mod("^[colorize:red:120")
-		--fix double death sound
-		if self.health > 0 then
-			mobs.play_sound(self,"damage")
-		end
-	end
-	self.old_health = self.health
-
-	-- kill logic
-	if self.health <= 0 then
-		self.dead = true
-		mobs.play_sound(self,"death")
-		-- FIXME: I think this next line is entirely unnecessary
-		self.played_death_sound = true
-	end
 
 	mobs.random_sound_handling(self,dtime)
 
@@ -895,6 +878,26 @@ function mobs.mob_step(self, dtime)
 			end
 		end
 	end
+	
+	-- damage hook
+	if self.old_health and self.health < self.old_health then
+		-- FIXME: the next line should be handled in animation code. I'll add a
+		-- new variable called hurt_animation or something
+		--color modifier which coincides with the pause_timer
+		self.object:set_texture_mod("^[colorize:red:120")
+
+		if self.health > 0 then
+			mobs.play_sound(self,"damage")
+		else
+			self.dead = true
+			mobs.play_sound(self,"death")
+			-- FIXME: I think this next line is entirely unnecessary
+			self.played_death_sound = true
+			-- don't do anything else after being killed
+			return
+		end
+	end
+	self.old_health = self.health
 
 	--baby grows up
 	if self.baby then
@@ -912,6 +915,11 @@ function mobs.mob_step(self, dtime)
 			mobs.baby_grow_up(self)
 		end
 	end
+
+	-- FIXME: it's not clear which things are the responsibility of do_custom.
+	-- E.g the comments suggest it does collision handling, which is a very
+	-- basic facility. In this case it seems like it should also handle damage,
+	-- baby growth, etc., and so we should probably put it at the beginning.
 
 	--do custom mob instructions
 	if self.do_custom then
