@@ -26,6 +26,28 @@ local math_abs = math.abs
 	return false, true, {}
 end]]
 
+-- This is used for the new despawn behavior. Returns a player,distance. Uses
+-- Euclidean distance.
+mobs.nearest_player_distance = function(self)
+	local pos = self.object:get_pos()
+	local players = minetest.get_connected_players()
+	if #players == 0 then
+		return nil, nil
+	end
+
+	-- initial max is the first player
+	local max_player = players[1]
+	local max_dist = vector_distance(pos,max_player:get_pos())
+	for _,player in pairs(players) do
+		local d = vector_distance(pos,player:get_pos())
+		if d > max_dist then
+			max_player = player
+			max_dist = d
+		end
+	end
+	return max_player,max_dist
+end
+
 --a fast function to be able to detect only players without using objects_in_radius
 mobs.detect_closest_player_within_radius = function(self, line_of_sight, radius, object_height_adder)
 	local pos1 = self.object:get_pos()

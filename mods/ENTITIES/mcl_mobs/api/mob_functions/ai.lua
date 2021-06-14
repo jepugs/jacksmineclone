@@ -2,6 +2,7 @@ local math = math
 local vector = vector
 local string = string
 
+
 local tonumber = tonumber
 
 local minetest_yaw_to_dir                   = minetest.yaw_to_dir
@@ -9,6 +10,9 @@ local minetest_get_item_group               = minetest.get_item_group
 local minetest_get_node                     = minetest.get_node
 local minetest_line_of_sight                = minetest.line_of_sight
 local minetest_get_node_light               = minetest.get_node_light
+
+
+local random = math.random
 
 local DOUBLE_PI = math.pi * 2
 local THIRTY_SECONDTH_PI = DOUBLE_PI * 0.03125
@@ -807,23 +811,25 @@ function mobs.mob_step(self, dtime)
 		return
 	end
 
-	-- FIXME: this despawn stuff is completely wrong and broken. It'll take some
-	-- plumbing to fix.
+	-- Despawn check. Almost the same as Minecraft one
+	-- See <https://minecraft.fandom.com/wiki/Spawn#Despaning>
+	if not persistent then
+		-- FIXME: Fish should despawn in a smaller, 64-block radius for
+		-- compatibility with Minecraft.
 
-	--despawn mechanism
-	--don't despawned tamed or bred mobs
-	if not self.tamed and not self.bred then
-		self.lifetimer = self.lifetimer - dtime
-		if self.lifetimer <= 0 then
-			self.lifetimer = self.lifetimer_reset
-			if not mobs.check_for_player_within_area(self, 64) then
-				--print("removing in MAIN LOGIC!")
-				self.object:remove()
-				return
-			end
+		local _,dist = mobs.nearest_player_distance(self)
+		-- nil distance indicates no players on server
+
+		-- Beyond 32 blocks, mobs have a 1/800 chance of despawning each tick.
+		-- Beyond 128 blocks, they despawn instantly.
+		if (not dist)
+			or dist > 128
+			or (dist > 32 and random(800) == 1)
+		then
+			self.object:remove()
+			return false
 		end
 	end
-
 
 	mobs.random_sound_handling(self,dtime)
 
@@ -894,6 +900,7 @@ function mobs.mob_step(self, dtime)
 			-- FIXME: I think this next line is entirely unnecessary
 			self.played_death_sound = true
 			-- don't do anything else after being killed
+			self.old_health = self.health
 			return
 		end
 	end
