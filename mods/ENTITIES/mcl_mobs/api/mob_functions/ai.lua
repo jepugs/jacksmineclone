@@ -344,7 +344,14 @@ local function land_state_execution(self, dtime)
 
 					--pop a baby out, it's a miracle!
 					local baby_pos = vector.divide(vector.add(self.object:get_pos(), mate:get_pos()), 2)
-					minetest.add_entity(baby_pos, self.name, minetest.serialize({baby = true, grow_up_timer = self.grow_up_goal, bred = true}))
+					-- babies are persistent (per bedrock behavior)
+					minetest.add_entity(baby_pos,
+										self.name,
+										minetest.serialize({
+												baby = true,
+												grow_up_timer = self.grow_up_goal,
+												bred = true,
+												persistent=true}))
 
 					mobs.play_sound_specific(self,"item_drop_pickup")
 
@@ -811,8 +818,11 @@ function mobs.mob_step(self, dtime)
 		return
 	end
 
-	-- Despawn check. Almost the same as Minecraft one
-	-- See <https://minecraft.fandom.com/wiki/Spawn#Despaning>
+	-- Despawn check. Almost the same as Minecraft one. We're going for bedrock
+	-- edition behavior because it creates persistent mobs in more situations,
+	-- which is good for farming.
+
+	-- See <https://minecraft.fandom.com/wiki/Spawn#Despawning>
 	if not persistent then
 		-- FIXME: Fish should despawn in a smaller, 64-block radius for
 		-- compatibility with Minecraft.
@@ -826,8 +836,8 @@ function mobs.mob_step(self, dtime)
 			or dist > 128
 			or (dist > 32 and random(800) == 1)
 		then
-			self.object:remove()
-			return false
+			-- self.object:remove()
+			-- return false
 		end
 	end
 
@@ -898,8 +908,6 @@ function mobs.mob_step(self, dtime)
 			self.dead = true
 			mobs.play_sound(self,"death")
 			-- FIXME: I think this next line is entirely unnecessary
-			self.played_death_sound = true
-			-- don't do anything else after being killed
 			self.old_health = self.health
 			return
 		end
@@ -923,28 +931,16 @@ function mobs.mob_step(self, dtime)
 		end
 	end
 
-	-- FIXME: it's not clear which things are the responsibility of do_custom.
-	-- E.g the comments suggest it does collision handling, which is a very
-	-- basic facility. In this case it seems like it should also handle damage,
-	-- baby growth, etc., and so we should probably put it at the beginning.
+	-- FIXME: I think this is a bad interface for overriding collision
+	-- detection. It would fit better with the API, and be easier to read if
+	-- there was a do_collision() hook or something to handle that
 
 	--do custom mob instructions
-	if self.do_custom then
-		-- when false skip going any further
-		if self.do_custom(self, dtime) == false then
-			--this needs to be here or the mob becomes immortal
-			if self.pause_timer > 0 then
-				self.pause_timer = self.pause_timer - dtime
-				--perfectly reset pause_timer
-				if self.pause_timer <= 0 then
-					self.pause_timer = 0
-					self.object:set_texture_mod("")
-				end
-			end
-			--this overrides internal lua collision detection
-			return
-		end
+	if self.do_custom and not self.do_custom(self, dtime) then
+		-- return immediately if the return value is false
+		return
 	end
+
 
 	local attacking = nil
 

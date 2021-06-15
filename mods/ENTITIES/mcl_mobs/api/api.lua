@@ -403,6 +403,7 @@ function mobs:register_mob(name, def)
 
 		-- Jack's extensions
 		persistent = def.persistent or false,
+		egg_timer = 1000,
 		-- End of Jack's extensions
 
 		on_spawn = def.on_spawn,

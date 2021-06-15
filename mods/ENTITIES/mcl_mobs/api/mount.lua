@@ -122,6 +122,9 @@ end)
 
 function mobs.attach(entity, player)
 
+	-- mounted mobs are persistent
+	entity.persistent = true
+
 	local attach_at, eye_offset
 
 	entity.player_rotation = entity.player_rotation or {x = 0, y = 0, z = 0}

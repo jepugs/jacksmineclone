@@ -38,6 +38,8 @@ end
 --a function which attempts to make mobs enter
 --the breeding state
 mobs.enter_breed_state = function(self,clicker)
+	-- FIXME: this change should maybe go elsewhere
+	self.persistent = true
 
     --do not breed if baby
     if self.baby then
@@ -71,6 +73,7 @@ mobs.enter_breed_state = function(self,clicker)
         end
         self.breed_lookout_timer = self.breed_lookout_timer_goal
         self.bred = true
+        self.persistent = true
         mobs.play_sound_specific(self,"mobs_mc_animal_eat_generic")
         return true
     end

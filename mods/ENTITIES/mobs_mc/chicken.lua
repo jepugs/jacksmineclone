@@ -87,28 +87,27 @@ mobs:register_mob("mobs_mc:chicken", {
 		end
 	end,
 
+	-- this matches minecraft
 	do_custom = function(self, dtime)
+		-- this is incremented in ticks, not in time
+		self.egg_timer = self.egg_timer - 1
 
-		self.egg_timer = (self.egg_timer or 0) + dtime
-		if self.egg_timer < 10 then
-			return
+		if self.egg_timer < 0 then
+			-- lay the egg
+			local pos = self.object:get_pos()
+			minetest.add_item(pos, mobs_mc.items.egg)
+
+			minetest.sound_play("mobs_mc_chicken_lay_egg",
+								{pos = pos,
+								 gain = 1.0,
+								 max_hear_distance = 16},
+								true)
+
+			-- reset the timer
+			self.egg_timer = math.random(6000,12000)
 		end
-		self.egg_timer = 0
 
-		if self.child
-		or math.random(1, 100) > 1 then
-			return
-		end
-
-		local pos = self.object:get_pos()
-
-		minetest.add_item(pos, mobs_mc.items.egg)
-
-		minetest.sound_play("mobs_mc_chicken_lay_egg", {
-			pos = pos,
-			gain = 1.0,
-			max_hear_distance = 16,
-		}, true)
+		return true
 	end,
 
 	--head code

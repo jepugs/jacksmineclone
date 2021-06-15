@@ -33,6 +33,9 @@ local function on_rightclick_prefix(self, clicker)
 				item:take_item()
 				clicker:set_wielded_item(item)
 			end
+
+ 			self.persistent = true
+
 			return true
 		end
 
