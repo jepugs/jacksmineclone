@@ -1,0 +1,17 @@
+* Mob spawning
+- mobs spawn in the center of a tile
+- spiders cannot spawn if any adjacent tile contains a block
+- mobs cannot spawn on transparent blocks except upper slabs
+- algorithm: pick a place to spawn a mob, then try to find a location
+
+** slabs
+- MC mobs can spawn on top/double slabs but not on bottom slabs. This is
+  different from most transparent block
+
+* Transparency
+
+** slabs
+- single slabs are transparent in bedrock. In java, they block light, but
+  otherwise act like transparent blocks. (I'm leaning toward bedrock behavior on
+  this one).
+- upper slabs can support redstone

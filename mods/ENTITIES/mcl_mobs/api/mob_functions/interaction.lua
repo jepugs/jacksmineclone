@@ -65,60 +65,7 @@ mobs.mob_punch = function(self, hitter, tflp, tool_capabilities, dir)
 		return
 	end
 
-	--neutral passive mobs switch to neutral hostile
-	if self.neutral then
-		--drop in variables for attacking (stops crash)
-		self.attacking   = hitter
-		self.punch_timer = 0
-		self.hostile = true
-		--hostile_cooldown timer is initialized here
-		self.hostile_cooldown_timer = self.hostile_cooldown
-
-		--initialize the group attack (check for other mobs in area, make them neutral hostile)
-		if self.group_attack then
-			mobs.group_attack_initialization(self)
-		end
-	end
-
-	--turn skittish mobs away and RUN
-	if self.skittish then
-
-		self.state = "run"
-
-		self.run_timer = 5 --arbitrary 5 seconds
-
-		local pos1 = self.object:get_pos()
-		pos1.y = 0
-		local pos2 = hitter:get_pos()
-		pos2.y = 0
-
-
-		local dir = vector.direction(pos2,pos1)
-
-		local yaw = minetest_dir_to_yaw(dir)
-
-		self.yaw = yaw
-	end
-
-	-- custom punch function
-	if self.do_punch then
-		-- when false skip going any further
-		if self.do_punch(self, hitter, tflp, tool_capabilities, dir) == false then
-			return
-		end
-	end
-
-	--don't do damage until pause timer resets
-	if self.pause_timer > 0 then
-		return
-	end
-
 	-- error checking when mod profiling is enabled
-	if not tool_capabilities then
-		minetest.log("warning", "[mobs_mc] Mod profiling enabled, damage not enabled")
-		return
-	end
-
 	local is_player = hitter:is_player()
 
 	-- punch interval
@@ -131,68 +78,8 @@ mobs.mob_punch = function(self, hitter, tflp, tool_capabilities, dir)
 		mcl_hunger.exhaust(hitter:get_player_name(), mcl_hunger.EXHAUST_ATTACK)
 	end
 
-	-- calculate mob damage
-	local damage = 0
-	local armor = self.object:get_armor_groups() or {}
-
-	--calculate damage groups
-	for group,_ in pairs( (tool_capabilities.damage_groups or {}) ) do
-		damage = damage + (tool_capabilities.damage_groups[group] or 0) * ((armor[group] or 0) / 100.0)
-	end
-
-	if weapon then
-		local fire_aspect_level = mcl_enchanting.get_enchantment(weapon, "fire_aspect")
-		if fire_aspect_level > 0 then
-			mcl_burning.set_on_fire(self.object, fire_aspect_level * 4)
-		end
-	end
-
-	-- check for tool immunity or special damage
-	for n = 1, #self.immune_to do
-		if self.immune_to[n][1] == weapon:get_name() then
-			damage = self.immune_to[n][2] or 0
-			break
-		end
-	end
-
-	-- healing
-	if damage <= -1 then
-		self.health = self.health - math.floor(damage)
-		return
-	end
-
-	--if tool_capabilities then
-	--	punch_interval = tool_capabilities.full_punch_interval or 1.4
-	--end
-
-	-- add weapon wear manually
-	-- Required because we have custom health handling ("health" property)
-	--minetest_is_creative_enabled("") ~= true --removed for now
-	if tool_capabilities then
-		if tool_capabilities.punch_attack_uses then
-			-- Without this delay, the wear does not work. Quite hacky ...
-			minetest_after(0, function(name)
-				local player = minetest.get_player_by_name(name)
-				if not player then return end
-				local weapon = hitter:get_wielded_item(player)
-				local def = weapon:get_definition()
-				if def.tool_capabilities and def.tool_capabilities.punch_attack_uses then
-					local wear = math.floor(65535/tool_capabilities.punch_attack_uses)
-					weapon:add_wear(wear)
-					hitter:set_wielded_item(weapon)
-				end
-			end, hitter:get_player_name())
-		end
-	end
-
-
-	--if player is falling multiply damage by 1.5
-	--critical hit
-	if hitter:get_velocity().y < 0 then
-		damage = damage * 1.5
-		mobs.critical_effect(self)
-	end
-
+	-- constant 4 damage (for now)
+	local damage = 4
 
 	-- only play hit sound and show blood effects if damage is 1 or over; lower to 0.1 to ensure armor works appropriately.
 	if damage >= 0.1 then
@@ -251,7 +138,7 @@ mobs.mob_punch = function(self, hitter, tflp, tool_capabilities, dir)
 		dir = vector.multiply(dir,multiplier)
 		dir.y = up
 		--add the velocity
-		self.object:add_velocity(dir)
+		-- self.object:add_velocity(dir)
 	end
 end
 

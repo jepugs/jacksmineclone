@@ -2,6 +2,8 @@
 
 local S = minetest.get_translator(minetest.get_current_modname())
 
+local bounds = {-0.4, 0.0, -0.4, 0.4, 1.15, 0.4}
+
 local cow_def = {
 	description = S("Cow"),
 	type = "animal",
@@ -11,7 +13,8 @@ local cow_def = {
 	xp_min = 1,
 	xp_max = 3,
 	rotate = 270,
-	collisionbox = {-0.45, -0.01, -0.45, 0.45, 1.39, 0.45},
+	collisionbox = bounds,
+	selectionbox = bounds,
 	visual = "mesh",
 	mesh = "mobs_mc_cow.b3d",
 	textures = { {
@@ -102,7 +105,7 @@ local cow_def = {
 	--end head code
 }
 
-mobs:register_mob("mobs_mc:cow", cow_def)
+jm.mob:register_mob("mobs_mc:cow", cow_def)
 
 -- Mooshroom
 local mooshroom_def = table.copy(cow_def)
@@ -170,7 +173,7 @@ mooshroom_def.on_rightclick = function(self, clicker)
 		end
 	end
 end
-mobs:register_mob("mobs_mc:mooshroom", mooshroom_def)
+jm.mob:register_mob("mobs_mc:mooshroom", mooshroom_def)
 
 
 -- Spawning

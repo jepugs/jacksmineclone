@@ -43,6 +43,7 @@ mobs.collision = function(self)
 		(not self.object:get_attach() or (self.object:get_attach() and self.object:get_attach() ~= object)) then
 			--stop infinite loop
 			collision_count = collision_count + 1
+			-- FIXME: this isn't how this should work. Implement it elsewhere.
 			--mob cramming
 			if collision_count > 30 then
 				self.health = -20

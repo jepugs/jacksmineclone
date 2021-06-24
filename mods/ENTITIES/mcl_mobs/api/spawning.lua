@@ -536,174 +536,174 @@ end
 --todo mob limiting
 --MAIN LOOP
 
-if mobs_spawn then
-	local timer = 0
-	minetest.register_globalstep(function(dtime)
-		timer = timer + dtime
-		if timer >= 10 then
-			timer = 0
-			for _,player in pairs(get_connected_players()) do
-				-- after this line each "break" means "continue"
-				local do_mob_spawning = true
-				repeat
-					--don't need to get these variables more than once
-					--they happen in a single server step
+-- if mobs_spawn then
+-- 	local timer = 0
+-- 	minetest.register_globalstep(function(dtime)
+-- 		timer = timer + dtime
+-- 		if timer >= 10 then
+-- 			timer = 0
+-- 			for _,player in pairs(get_connected_players()) do
+-- 				-- after this line each "break" means "continue"
+-- 				local do_mob_spawning = true
+-- 				repeat
+-- 					--don't need to get these variables more than once
+-- 					--they happen in a single server step
 
-					local player_pos = player:get_pos()
-					local dimension = mcl_worlds.pos_to_dimension(player_pos)
+-- 					local player_pos = player:get_pos()
+-- 					local dimension = mcl_worlds.pos_to_dimension(player_pos)
 
-					if dimension == "void" or dimension == "default" then
-						break -- ignore void and unloaded area
-					end
+-- 					if dimension == "void" or dimension == "default" then
+-- 						break -- ignore void and unloaded area
+-- 					end
 
-					local min, max = decypher_limits(player_pos.y)
+-- 					local min, max = decypher_limits(player_pos.y)
 
-					for i = 1, math_random(1,4) do
-						-- after this line each "break" means "continue"
-						local do_mob_algorithm = true
-						repeat
+-- 					for i = 1, math_random(1,4) do
+-- 						-- after this line each "break" means "continue"
+-- 						local do_mob_algorithm = true
+-- 						repeat
 
-							local goal_pos = position_calculation(player_pos)
+-- 							local goal_pos = position_calculation(player_pos)
 
-							local spawning_position_list = find_nodes_in_area_under_air(vector_new(goal_pos.x,min,goal_pos.z), vector_new(goal_pos.x,max,goal_pos.z), {"group:solid", "group:water", "group:lava"})
+-- 							local spawning_position_list = find_nodes_in_area_under_air(vector_new(goal_pos.x,min,goal_pos.z), vector_new(goal_pos.x,max,goal_pos.z), {"group:solid", "group:water", "group:lava"})
 
-							--couldn't find node
-							if #spawning_position_list <= 0 then
-								break
-							end
+-- 							--couldn't find node
+-- 							if #spawning_position_list <= 0 then
+-- 								break
+-- 							end
 
-							local spawning_position = spawning_position_list[math_random(1,#spawning_position_list)]
+-- 							local spawning_position = spawning_position_list[math_random(1,#spawning_position_list)]
 
-							--Prevent strange behavior   --- this is commented out: /too close to player --fixed with inner circle
-							if not spawning_position then --  or vector_distance(player_pos, spawning_position) < 15
-								break
-							end
+-- 							--Prevent strange behavior   --- this is commented out: /too close to player --fixed with inner circle
+-- 							if not spawning_position then --  or vector_distance(player_pos, spawning_position) < 15
+-- 								break
+-- 							end
 
-							--hard code mob limit in area to 5 for now
-							if count_mobs(spawning_position) >= 5 then
-								break
-							end
+-- 							--hard code mob limit in area to 5 for now
+-- 							if count_mobs(spawning_position) >= 5 then
+-- 								break
+-- 							end
 
-							local gotten_node = get_node(spawning_position).name
+-- 							local gotten_node = get_node(spawning_position).name
 
-							if not gotten_node or gotten_node == "air" then --skip air nodes
-								break
-							end
+-- 							if not gotten_node or gotten_node == "air" then --skip air nodes
+-- 								break
+-- 							end
 
-							local gotten_biome = minetest.get_biome_data(spawning_position)
+-- 							local gotten_biome = minetest.get_biome_data(spawning_position)
 
-							if not gotten_biome then
-								break --skip if in unloaded area
-							end
+-- 							if not gotten_biome then
+-- 								break --skip if in unloaded area
+-- 							end
 
-							gotten_biome = get_biome_name(gotten_biome.biome) --makes it easier to work with
+-- 							gotten_biome = get_biome_name(gotten_biome.biome) --makes it easier to work with
 
-							--add this so mobs don't spawn inside nodes
-							spawning_position.y = spawning_position.y + 1
+-- 							--add this so mobs don't spawn inside nodes
+-- 							spawning_position.y = spawning_position.y + 1
 
-							--only need to poll for node light if everything else worked
-							local gotten_light = get_node_light(spawning_position)
+-- 							--only need to poll for node light if everything else worked
+-- 							local gotten_light = get_node_light(spawning_position)
 
-							local is_water = get_item_group(gotten_node, "water") ~= 0
-							local is_lava  = get_item_group(gotten_node, "lava") ~= 0
+-- 							local is_water = get_item_group(gotten_node, "water") ~= 0
+-- 							local is_lava  = get_item_group(gotten_node, "lava") ~= 0
 
-							local mob_def = nil
+-- 							local mob_def = nil
 
-							--create a disconnected clone of the spawn dictionary
-							--prevents memory leak
-							local mob_library_worker_table = table_copy(spawn_dictionary)
+-- 							--create a disconnected clone of the spawn dictionary
+-- 							--prevents memory leak
+-- 							local mob_library_worker_table = table_copy(spawn_dictionary)
 
-							--grab mob that fits into the spawning location
-							--randomly grab a mob, don't exclude any possibilities
-							local repeat_mob_search = true
-							repeat
+-- 							--grab mob that fits into the spawning location
+-- 							--randomly grab a mob, don't exclude any possibilities
+-- 							local repeat_mob_search = true
+-- 							repeat
 
-								--do not infinite loop
-								if #mob_library_worker_table <= 0 then
-									--print("breaking infinite loop")
-									break
-								end
+-- 								--do not infinite loop
+-- 								if #mob_library_worker_table <= 0 then
+-- 									--print("breaking infinite loop")
+-- 									break
+-- 								end
 
-								local skip = false
+-- 								local skip = false
 
-								--use this for removing table elements of mobs that do not match
-								local temp_index = math_random(1,#mob_library_worker_table)
+-- 								--use this for removing table elements of mobs that do not match
+-- 								local temp_index = math_random(1,#mob_library_worker_table)
 
-								local temp_def = mob_library_worker_table[temp_index]
+-- 								local temp_def = mob_library_worker_table[temp_index]
 
-								--skip if something ridiculous happens (nil mob def)
-								--something truly horrible has happened if skip gets
-								--activated at this point
-								if not temp_def then
-									skip = true
-								end
+-- 								--skip if something ridiculous happens (nil mob def)
+-- 								--something truly horrible has happened if skip gets
+-- 								--activated at this point
+-- 								if not temp_def then
+-- 									skip = true
+-- 								end
 
-								if not skip and (spawning_position.y < temp_def.min_height or spawning_position.y > temp_def.max_height) then
-									skip = true
-								end
+-- 								if not skip and (spawning_position.y < temp_def.min_height or spawning_position.y > temp_def.max_height) then
+-- 									skip = true
+-- 								end
 
-								--skip if not correct dimension
-								if not skip and (temp_def.dimension ~= dimension) then
-									skip = true
-								end
+-- 								--skip if not correct dimension
+-- 								if not skip and (temp_def.dimension ~= dimension) then
+-- 									skip = true
+-- 								end
 
-								--skip if not in correct biome
-								if not skip and (not biome_check(temp_def.biomes, gotten_biome)) then
-									skip = true
-								end
+-- 								--skip if not in correct biome
+-- 								if not skip and (not biome_check(temp_def.biomes, gotten_biome)) then
+-- 									skip = true
+-- 								end
 
-								--don't spawn if not in light limits
-								if not skip and (gotten_light < temp_def.min_light or gotten_light > temp_def.max_light) then
-									skip = true
-								end
+-- 								--don't spawn if not in light limits
+-- 								if not skip and (gotten_light < temp_def.min_light or gotten_light > temp_def.max_light) then
+-- 									skip = true
+-- 								end
 
-								--skip if not in correct spawning type
-								if not skip and (temp_def.type_of_spawning == "ground" and is_water) then
-									skip = true
-								end
+-- 								--skip if not in correct spawning type
+-- 								if not skip and (temp_def.type_of_spawning == "ground" and is_water) then
+-- 									skip = true
+-- 								end
 
-								if not skip and (temp_def.type_of_spawning == "ground" and is_lava) then
-									skip = true
-								end
+-- 								if not skip and (temp_def.type_of_spawning == "ground" and is_lava) then
+-- 									skip = true
+-- 								end
 
-								--found a mob, exit out of loop
-								if not skip then
-									--minetest.log("warning", "found mob:"..temp_def.name)
-									--print("found mob:"..temp_def.name)
-									mob_def = table_copy(temp_def)
-									break
-								else
-									--minetest.log("warning", "deleting temp index "..temp_index)
-									--print("deleting temp index")
-									table_remove(mob_library_worker_table, temp_index)
-								end
+-- 								--found a mob, exit out of loop
+-- 								if not skip then
+-- 									--minetest.log("warning", "found mob:"..temp_def.name)
+-- 									--print("found mob:"..temp_def.name)
+-- 									mob_def = table_copy(temp_def)
+-- 									break
+-- 								else
+-- 									--minetest.log("warning", "deleting temp index "..temp_index)
+-- 									--print("deleting temp index")
+-- 									table_remove(mob_library_worker_table, temp_index)
+-- 								end
 
-							until repeat_mob_search == false --this is needed to sort through mobs randomly
+-- 							until repeat_mob_search == false --this is needed to sort through mobs randomly
 
 
-							--catch if went through all mobs and something went horribly wrong
-							--could not find a valid mob to spawn that fits the environment
-							if not mob_def then
-								break
-							end
+-- 							--catch if went through all mobs and something went horribly wrong
+-- 							--could not find a valid mob to spawn that fits the environment
+-- 							if not mob_def then
+-- 								break
+-- 							end
 
-							--adjust the position for water and lava mobs
-							if mob_def.type_of_spawning == "water"  or mob_def.type_of_spawning == "lava" then
-								spawning_position.y = spawning_position.y - 1
-							end
+-- 							--adjust the position for water and lava mobs
+-- 							if mob_def.type_of_spawning == "water"  or mob_def.type_of_spawning == "lava" then
+-- 								spawning_position.y = spawning_position.y - 1
+-- 							end
 
-							--print("spawning: " .. mob_def.name)
+-- 							--print("spawning: " .. mob_def.name)
 
-							--everything is correct, spawn mob
-							minetest.add_entity(spawning_position, mob_def.name)
+-- 							--everything is correct, spawn mob
+-- 							minetest.add_entity(spawning_position, mob_def.name)
 
-							break
-						until do_mob_algorithm == false --this is a safety catch
-					end
+-- 							break
+-- 						until do_mob_algorithm == false --this is a safety catch
+-- 					end
 
-					break
-				until do_mob_spawning == false --this is a performance catch
-			end
-		end
-	end)
-end
+-- 					break
+-- 				until do_mob_spawning == false --this is a performance catch
+-- 			end
+-- 		end
+-- 	end)
+-- end

@@ -46,8 +46,8 @@ minetest.register_on_mods_loaded(function()
 				return
 			end
 		end
-		def.on_step = on_step
-		minetest.register_entity(":"..entitystring, def)
+		--def.on_step = on_step
+		--minetest.register_entity(":"..entitystring, def)
 	end
 end)
 

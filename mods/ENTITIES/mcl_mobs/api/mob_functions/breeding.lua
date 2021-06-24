@@ -112,13 +112,13 @@ mobs.look_for_mate = function(self)
 				if minetest.line_of_sight then
 					--must add eye height or stuff breaks randomly because of
 					--seethrough nodes being a blocker (like grass)
-					if minetest.line_of_sight(
-							vector.new(pos1.x, pos1.y, pos1.z),
-							vector.new(pos2.x, pos2.y + mate:get_properties().eye_height, pos2.z)
-						) then
+					-- if minetest.line_of_sight(
+					-- 		vector.new(pos1.x, pos1.y, pos1.z),
+					-- 		vector.new(pos2.x, pos2.y + mate:get_properties().eye_height, pos2.z)
+					-- 	) then
 						mates_detected = mates_detected + 1
 						mates_in_area[mate] = distance
-					end
+					-- end
 				else
 					mates_detected = mates_detected + 1
 					mates_in_area[mate] = distance

@@ -2,19 +2,8 @@ local math_random = math.random
 
 local minetest_settings = minetest.settings
 
--- CMI support check
-local use_cmi = minetest.global_exists("cmi")
-
 -- get entity staticdata
-mobs.mob_staticdata = function(self)
-	self.remove_ok = true
-	self.attack = nil
-	self.following = nil
-
-	if use_cmi then
-		self.serialized_cmi_components = cmi.serialize_components(self._cmi_components)
-	end
-
+function jm.mob:mob_staticdata()
 	local tmp = {}
 
 	for _,stat in pairs(self) do
@@ -22,9 +11,12 @@ mobs.mob_staticdata = function(self)
 		local t = type(stat)
 
 		if  t ~= "function"
-		and t ~= "nil"
-		and t ~= "userdata"
-		and _ ~= "_cmi_components" then
+            and t ~= "nil"
+            and t ~= "userdata"
+            and _ ~= "_cmi_components"
+            and _ ~= "step_hooks"
+            and _ ~= "action"
+        then
 			tmp[_] = self[_]
 		end
 	end
@@ -34,14 +26,9 @@ end
 
 
 -- activate mob and reload settings
-mobs.mob_activate = function(self, staticdata, def, dtime)
-
-	-- remove monsters in peaceful mode
-	if self.type == "monster" and minetest_settings:get_bool("only_peaceful_mobs", false) then
-		mcl_burning.extinguish(self.object)
-		self.object:remove()
-		return
-	end
+function jm.mob:activate(staticdata, def, dtime)
+    self.step_hooks = {}
+    self.on_step = self.step
 
 	-- load entity variables
 	local tmp = minetest.deserialize(staticdata)
@@ -52,9 +39,8 @@ mobs.mob_activate = function(self, staticdata, def, dtime)
 		end
 	end
 
-	--set up wandering
-	if not self.wandering then
-		self.wandering = true
+	if not self.health then
+		self.health = math_random (def.hp_min, def.hp_max)
 	end
 
 	--clear animation
@@ -75,11 +61,6 @@ mobs.mob_activate = function(self, staticdata, def, dtime)
 		self.base_selbox = self.selectionbox
 	end
 
-	-- for current mobs that dont have this set
-	if not self.base_selbox then
-		self.base_selbox = self.selectionbox or self.base_colbox
-	end
-
 	-- set texture, model and size
 	local textures = self.base_texture
 	local mesh = self.base_mesh
@@ -87,68 +68,9 @@ mobs.mob_activate = function(self, staticdata, def, dtime)
 	local colbox = self.base_colbox
 	local selbox = self.base_selbox
 
-	-- specific texture if gotten
-	if self.gotten == true
-	and def.gotten_texture then
-		textures = def.gotten_texture
-	end
-
-	-- specific mesh if gotten
-	if self.gotten == true
-	and def.gotten_mesh then
-		mesh = def.gotten_mesh
-	end
-
-	-- set baby mobs to half size
-	if self.baby == true then
-
-		vis_size = {
-			x = self.base_size.x * self.baby_size,
-			y = self.base_size.y * self.baby_size,
-		}
-
-		if def.child_texture then
-			textures = def.child_texture[1]
-		end
-
-		colbox = {
-			self.base_colbox[1] * self.baby_size,
-			self.base_colbox[2] * self.baby_size,
-			self.base_colbox[3] * self.baby_size,
-			self.base_colbox[4] * self.baby_size,
-			self.base_colbox[5] * self.baby_size,
-			self.base_colbox[6] * self.baby_size
-		}
-		selbox = {
-			self.base_selbox[1] * self.baby_size,
-			self.base_selbox[2] * self.baby_size,
-			self.base_selbox[3] * self.baby_size,
-			self.base_selbox[4] * self.baby_size,
-			self.base_selbox[5] * self.baby_size,
-			self.base_selbox[6] * self.baby_size
-		}
-	end
-
-	--stop mobs from reviving
-	if not self.dead and not self.health then
-		self.health = math_random (self.hp_min, self.hp_max)
-	end
-
-	if not self.random_sound_timer then
-		self.random_sound_timer = math_random(self.random_sound_timer_min,self.random_sound_timer_max)
-	end
-
 	if self.breath == nil then
 		self.breath = self.breath_max
 	end
-
-	-- pathfinding init
-	self.path = {}
-	self.path.way = {} -- path to follow, table of positions
-	self.path.lastpos = {x = 0, y = 0, z = 0}
-	self.path.stuck = false
-	self.path.following = false -- currently following path?
-	self.path.stuck_timer = 0 -- if stuck for too long search for path
 
 	-- Armor groups
 	-- immortal=1 because we use custom health
@@ -163,6 +85,7 @@ mobs.mob_activate = function(self, staticdata, def, dtime)
 	self.object:set_armor_groups(armor)
 	self.old_y = self.object:get_pos().y
 	self.old_health = self.health
+    self.sounds = {}
 	self.sounds.distance = self.sounds.distance or 10
 	self.textures = textures
 	self.mesh = mesh
@@ -181,34 +104,6 @@ mobs.mob_activate = function(self, staticdata, def, dtime)
 	self.blinktimer = 0
 	self.blinkstatus = false
 
-
-	--continue mob effect on server restart
-	if self.dead or self.health <= 0 then
-		self.object:set_texture_mod("^[colorize:red:120")
-	else
-		self.object:set_texture_mod("")
-	end
-
 	-- set anything changed above
 	self.object:set_properties(self)
-
-	--update_tag(self)
-	--mobs.set_animation(self, "stand")
-
-	-- run on_spawn function if found
-	if self.on_spawn and not self.on_spawn_run then
-		if self.on_spawn(self) then
-			self.on_spawn_run = true --  if true, set flag to run once only
-		end
-	end
-
-	-- run after_activate
-	if def.after_activate then
-		def.after_activate(self, staticdata, def, dtime)
-	end
-
-	if use_cmi then
-		self._cmi_components = cmi.activate_components(self.serialized_cmi_components)
-		cmi.notify_activate(self.object, dtime)
-	end
 end
