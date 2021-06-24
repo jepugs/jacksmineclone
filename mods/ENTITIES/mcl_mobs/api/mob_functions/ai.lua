@@ -1,7 +1,9 @@
-local random = math.random
-
 --------------------------------------------------------------------------------
------ Jack's code
+----- Mob AI code
+
+local random = math.random
+local HALF_PI = math.pi / 2
+
 
 -- Mob logic has three stages. First, we execute all the necessary per-step
 -- checks, such as applying environmental damage, checking for death, etc. After
@@ -32,10 +34,6 @@ local random = math.random
 -- other entities it collides with (i.e. mob packing behavior), plus gravity,
 -- plus explosions, plus liquids, plus movement. This is used to compute the
 -- velocity of the mob.
-
-
--- NOTE: for serialization purposes, hooks must not access any non-constant,
--- local variables in their containing scope.
 
 -- custom hooks: on_activate on_die on_spawn on_detonate on_blast on_ignite
 -- on_burn on_drown on_receive on_breed on_tame on_grow_up on_rightclick
@@ -230,6 +228,48 @@ function jm.mob:add_grow_up_hook(grow_up_time)
         end
     end
     self:add_hook(hook)
+end
+
+-- FIXME: rewrite this
+function jm.mob:death_logic(dtime)
+	-- FIXME: self should never be nil, and this check shouldn't be here. The
+	-- correct approach is to not call this function with invalid input. I can't
+	-- find anywhere where this happens though.
+
+	--stop crashing game when object is nil
+	if not self or not self.object or not self.object:get_luaentity() then
+		return
+	end
+
+    self.death_animation_timer = self.death_animation_timer + dtime
+
+	--stop mob from getting in the way of other mobs you're fighting
+	if self.object:get_properties().pointable then
+		self.object:set_properties({pointable = false})
+	end
+
+    --the final POOF of a mob despawning
+    if self.death_animation_timer >= 1.25 then
+        mobs.death_effect(self)
+		-- FIXME: this should probably be handled elsewhere
+        self.object:remove()
+
+		return
+    end
+
+    --I'm sure there's a more efficient way to do this
+    --but this is the easiest, easier to work with 1 variable synced
+    --this is also not smooth
+    local death_animation_roll = self.death_animation_timer * 2 -- * 2 to make it faster
+    if death_animation_roll > 1 then
+        death_animation_roll = 1
+    end
+
+    local rot = self.object:get_rotation() --(no pun intended)
+
+    rot.z = death_animation_roll * HALF_PI
+    self.object:set_rotation(rot)
+    mobs.set_mob_animation(self,"stand", true)
 end
 
 -- step function

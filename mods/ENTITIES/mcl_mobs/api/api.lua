@@ -12,14 +12,11 @@ jm = jm or {}
 jm.mob = {}
 jm.mob.__index = jm.mob
 
+-- this is a placeholder constant while I finish removing some of the mcl2 code
 mobs = {}
-
--- lua locals - can grab from this to easily plop them into the api lua files
 
 --localize minetest functions
 local minetest_settings                     = minetest.settings
-local minetest_get_objects_inside_radius    = minetest.get_objects_inside_radius
-local minetest_get_modpath                  = minetest.get_modpath
 local minetest_registered_nodes             = minetest.registered_nodes
 local minetest_get_node                     = minetest.get_node
 local minetest_registered_entities          = minetest.registered_entities
@@ -40,10 +37,9 @@ local api_path = minetest.get_modpath(minetest.get_current_modname()).."/api/mob
 dofile(api_path .. "actions.lua")
 dofile(api_path .. "ai.lua")
 dofile(api_path .. "animation.lua")
-dofile(api_path .. "util.lua")
-dofile(api_path .. "sound_handling.lua")
-dofile(api_path .. "death_logic.lua")
 dofile(api_path .. "mob_effects.lua")
+dofile(api_path .. "sound_handling.lua")
+dofile(api_path .. "util.lua")
 
 mobs.spawning_mobs = {}
 
@@ -185,7 +181,6 @@ function jm.mob:register_mob(name, def)
 		on_step = function(self, dtime)
             self:step(dtime)
         end,
-		on_punch = mobs.mob_punch,
 
 		on_activate = function(self, staticdata, dtime)
             setmetatable(self, jm.mob)
